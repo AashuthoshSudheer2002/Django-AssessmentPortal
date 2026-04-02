@@ -1,0 +1,87 @@
+{% extends 'home.html' %}
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<div class="container mt-5">
+    <h2>Score Submission for {{ candidate.name }}</h2>
+
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        {{ formset.management_form }}
+
+        {% for form in formset %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-4">
+                            {{ form.criterion.label_tag }} {{ form.criterion }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.score.label_tag }} {{ form.score }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">Submit Scores</button>
+    </form>
+</div>
+
+<!-- Inject data as safe JSON -->
+{{ criterion_section_map|json_script:"criterion-section-data" }}
+
+<script>
+    const criterionSectionMap = JSON.parse(document.getElementById('criterion-section-data').textContent);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const allowedCriteria = criterionSectionMap.criteria; // Array of {id, name}
+        const allowedIds = allowedCriteria.map(c => String(c.id));
+
+        const criterionSelects = document.querySelectorAll("select[name$='-criterion']");
+
+        // Limit options to only allowed criteria
+        criterionSelects.forEach(select => {
+            const currentValue = select.value;
+            const options = Array.from(select.options);
+
+            // Remove all options not in allowed criteria
+            options.forEach(option => {
+                if (option.value && !allowedIds.includes(option.value)) {
+                    option.remove();
+                }
+            });
+
+            // If currentValue is not allowed anymore, reset it
+            if (currentValue && !allowedIds.includes(currentValue)) {
+                select.value = "";
+            }
+        });
+
+        // Prevent duplicate selections
+        criterionSelects.forEach((criterionSelect) => {
+            criterionSelect.addEventListener("change", () => {
+                preventDuplicateCriteria();
+            });
+        });
+
+        function preventDuplicateCriteria() {
+            const selected = new Set();
+            criterionSelects.forEach(select => {
+                if (select.value) selected.add(select.value);
+            });
+
+            criterionSelects.forEach(select => {
+                const currentValue = select.value;
+                Array.from(select.options).forEach(option => {
+                    option.disabled = option.value && option.value !== currentValue && selected.has(option.value);
+                });
+            });
+        }
+
+        preventDuplicateCriteria(); // Run once at start
+    });
+</script>
+
+
+{% endblock %}

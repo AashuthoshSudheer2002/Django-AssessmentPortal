@@ -1,0 +1,146 @@
+{% extends 'home.html' %}
+{% block content %}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<div class="container mt-4">
+    <h2 class="mb-4">Create New Role</h2>
+
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" id="roleForm">
+        {% csrf_token %}
+
+        <div class="mb-4">
+            <label for="role_title" class="form-label fw-bold">Role Title</label>
+            <input type="text" id="role_title" name="role_title" class="form-control" placeholder="e.g. Python Developer" required>
+        </div>
+
+        <div id="sectionsContainer"></div>
+
+        <div class="d-grid mt-4">
+            <button type="submit" class="btn btn-success btn-lg">Submit</button>
+        </div>
+    </form>
+</div>
+
+<!-- Injected section and criteria data -->
+{{ sections|json_script:"section-data" }}
+{{ criteria_by_section|json_script:"criteria-data" }}
+
+<script>
+const sections = JSON.parse(document.getElementById("section-data").textContent);
+const criteriaBySection = JSON.parse(document.getElementById("criteria-data").textContent);
+
+function displayAllSectionsAndCriteria() {
+    let html = '';
+
+    sections.forEach(section => {
+        const sectionId = section.id;
+        const criteriaList = criteriaBySection[sectionId] || [];
+
+        let criteriaHtml = '';
+        criteriaList.forEach((c, index) => {
+            criteriaHtml += `
+                <div class="border p-3 rounded mb-3 bg-light">
+                    <h6>Criteria ${index + 1}: ${c.criteria_title}</h6>
+                    <p class="mb-1"><small>${c.description || ''}</small></p>
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-3">
+                            <label>Weight (%)</label>
+                            <input type="number" name="criteria_weight_${sectionId}_${c.id}"
+                                   id="criteria_weight_${sectionId}_${c.id}"
+                                   class="form-control criteria-weight-input"
+                                   placeholder="Weight (%)" required
+                                   oninput="validateCriteriaWeights(${sectionId})">
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+            <div class="card mb-4 shadow-sm" id="section_block_${sectionId}">
+                <div class="card-body">
+                    <h5 class="card-title">${section.title}</h5>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Section Weight (%)</label>
+                            <input type="number" name="section_weight_${sectionId}" id="section_weight_${sectionId}"
+                                   class="form-control section-weight-input" placeholder="e.g. 30" required
+                                   oninput="validateSectionWeights()">
+                            <div class="text-danger small" id="section_weight_error_${sectionId}"></div>
+                        </div>
+                    </div>
+                    <div id="criteriaContainer_${sectionId}">
+                        ${criteriaHtml}
+                        <div class="text-danger small mt-1" id="criteria_weight_error_${sectionId}"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    document.getElementById('sectionsContainer').innerHTML = html;
+    validateSectionWeights();
+}
+
+function validateSectionWeights() {
+    let total = 0;
+    document.querySelectorAll('.section-weight-input').forEach(input => {
+        total += parseInt(input.value) || 0;
+    });
+    const errorDiv = document.getElementById(`section_weight_error_${sectionId}`);
+    if (total > 100) {
+        errorDiv.textContent = `Section weights total ${total}%. Maximum allowed is 100%.`;
+    } else {
+        errorDiv.textContent = '';
+    }
+    return total;
+}
+
+function validateCriteriaWeights(sectionId) {
+    let total = 0;
+    const inputs = document.querySelectorAll(`#criteriaContainer_${sectionId} .criteria-weight-input`);
+    inputs.forEach(input => {
+        total += parseInt(input.value) || 0;
+    });
+
+    const errorDiv = document.getElementById(`criteria_weight_error_${sectionId}`);
+    if (total > 100) {
+        errorDiv.textContent = `Criteria weights total ${total}%. Maximum allowed is 100%.`;
+    } else {
+        errorDiv.textContent = '';
+    }
+
+    return total;
+}
+
+document.getElementById("roleForm").addEventListener("submit", function (e) {
+    let sectionTotal = validateSectionWeights();
+    if (sectionTotal > 100) {
+        e.preventDefault();
+        alert("❌ Submission failed: Total section weights must not exceed 100%.");
+        return;
+    }
+
+    let valid = true;
+    sections.forEach(s => {
+        const total = validateCriteriaWeights(s.id);
+        if (total > 100) {
+            valid = false;
+        }
+    });
+
+    if (!valid) {
+        e.preventDefault();
+        alert("❌ Submission failed: One or more criteria groups exceed 100% weight.");
+    }
+});
+
+window.addEventListener("DOMContentLoaded", displayAllSectionsAndCriteria);
+</script>
+
+{% endblock %}

@@ -1,0 +1,15 @@
+<div class="mb-3 border rounded p-3">
+    <b>{{ form.section_title.label_tag }}</b>
+    &nbsp;{{ form.section_title }}
+    <br><br>
+    
+    
+
+    {{ form.section_id }}
+
+    <label for="{{ form.evaluator.id_for_label }}">Evaluator</label>
+    {{ form.evaluator }}
+    {% for error in form.evaluator.errors %}
+        <div class="text-danger small">{{ error }}</div>
+    {% endfor %}
+</div>

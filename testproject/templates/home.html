@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% block title %}
+    <title>Document</title>
+    {% endblock %}
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        bug: '#f87171',
+                        fix: '#34d399',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <nav class="bg-black shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+        <a href="{% url 'home' %}" class="text-2xl font-bold text-white"><h1>Assessment Portal Website</h1></a>
+        <div class="flex items-center gap-2">
+                    {% if user.is_authenticated %}
+                        <span class="text-white mr-2">Hi, {{ user.username }}</span>
+                    {% else %}
+                         <a href="{% url 'login' %}" class="bg-white text-black px-3 py-1 rounded hover:bg-green-600 hover:text-white transition">Login</a>
+                    {% endif %}
+                    {% if user.is_superuser %}
+                        <form action="{% url 'candidate-register' %}" method="get">
+                                <button type="submit" class="bg-white text-black px-3 py-1 rounded hover:text-white hover:bg-gray-200 transition">Register</button>
+                        </form>
+                        
+                    {% endif %}
+                        <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                            <button type="submit" class="bg-white text-black px-3 py-1 rounded hover:bg-red-600 hover:text-white transition">Logout</button>
+                        </form>
+                 
+               
+    </div>
+</nav>
+{% block content %}
+<!-- Content -->
+    <main class="max-w-7xl mx-auto py-8 px-4">
+    
+
+        <!-- Buttons Section -->
+        <div class="mb-6 text-center">
+            
+             {% if user.is_superuser %}   
+                <div class="mb-6 text-center">
+                    <div class="flex justify-center gap-4 mt-4">
+                        <a href="{% url 'candidate-scores' %}" class="bg-white text-black px-6 py-3 rounded-lg hover:text-white hover:bg-gray-600 transition">
+                            View Score
+                        </a>
+                </div>
+                <div class="mb-6 text-center">
+                    <div class="flex justify-center gap-4 mt-4">
+                        <a href="{% url 'candidate-list' %}" class="bg-white text-black px-6 py-3 rounded-lg hover:text-white hover:bg-gray-600 transition">
+                            View Candidates
+                        </a>
+                </div> 
+            
+                </div>        
+                <div class="mb-6 text-center">
+                    <div class="flex justify-center gap-4 mt-4">
+                        <a href="{% url 'createrole' %}" class="bg-white text-black px-6 py-3 rounded-lg hover:text-white hover:bg-gray-600 transition">
+                            Create Role
+                        </a>
+                </div>
+                <div class="mb-6 text-center">
+                    <div class="flex justify-center gap-4 mt-4">
+                        <a href="{% url 'assign-evaluator' %}" class="bg-white text-black px-6 py-3 rounded-lg hover:text-white hover:bg-gray-600 transition">
+                            Assign Evaluator
+                        </a>
+                </div>
+            {% else %}
+                <div class="mb-6 text-center">
+                    <div class="flex justify-center gap-4 mt-4">
+                        <a href="{% url 'trial' %}" class="bg-white text-black px-6 py-3 rounded-lg hover:text-white hover:bg-gray-600 transition">
+                            Set Score 
+                        </a>
+                </div></div>
+            {% endif %}
+            
+            
+        </div>
+
+
+    </main>
+
+    {% endblock %}
+    
+</body>
+</html>

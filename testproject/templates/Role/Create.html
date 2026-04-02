@@ -1,0 +1,175 @@
+{% extends 'home.html' %}
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<div class="container mt-4">
+    <h2 class="mb-4">Create New Role</h2>
+
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" id="roleForm">
+        {% csrf_token %}
+
+        <div class="mb-4">
+            <label for="role_title" class="form-label fw-bold">Role Title</label>
+            <input type="text" id="role_title" name="role_title" class="form-control" placeholder="e.g. Python Developer" required>
+        </div>
+
+        <div id="sectionsContainer"></div>
+        <input type="hidden" id="section_count" name="section_count" value="0">
+
+        <button type="button" class="btn btn-outline-primary mb-4" onclick="addSection()" id="addSectionBtn">+ Add Section</button>
+
+        <div class="d-grid">
+            <button type="submit" class="btn btn-success btn-lg">Submit</button>
+        </div>
+    </form>
+</div>
+
+{{ sections|json_script:"section-data" }}
+
+<script>
+let sectionIndex = 0;
+const sections = JSON.parse(document.getElementById("section-data").textContent);
+
+function addSection() {
+    sectionIndex++;
+    document.getElementById('section_count').value = sectionIndex;
+
+    // Step 1: Collect all selected section IDs so far
+    const selectedSectionIds = new Set();
+    document.querySelectorAll('#sectionsContainer select[name^="section_id_"]').forEach(select => {
+        if (select.value) {
+            selectedSectionIds.add(select.value);
+        }
+    });
+
+    // Step 2: Filter sections to exclude selected ones
+    let options = '';
+    sections.forEach(s => {
+        if (!selectedSectionIds.has(String(s.id))) {
+            options += `<option value="${s.id}">${s.title}</option>`;
+        }
+    });
+
+    // Step 3: Build HTML with filtered options
+    const html = `
+    <div class="card mb-4 shadow-sm" id="section_block_${sectionIndex}">
+        <div class="card-body">
+            <h5 class="card-title">Section ${sectionIndex}</h5>
+            <div class="row g-3 mb-3">
+                <div class="col-md-8">
+                    <label class="form-label">Select Section</label>
+                    <select name="section_id_${sectionIndex}" class="form-select" required>
+                        ${options}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Section Weight (%)</label>
+                    <input type="number" name="section_weight_${sectionIndex}" id="section_weight_${sectionIndex}"
+                           class="form-control section-weight-input" placeholder="e.g. 30" required
+                           oninput="validateSectionWeights()">
+                    <div class="text-danger small" id="section_weight_error_${sectionIndex}"></div>
+                </div>
+            </div>
+
+            <div id="criteriaContainer_${sectionIndex}"></div>
+            <input type="hidden" name="criteria_count_${sectionIndex}" id="criteria_count_${sectionIndex}" value="0">
+
+            <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="addCriteria(${sectionIndex})">+ Add Criteria</button>
+            
+        </div>
+    </div>
+    `;
+
+    document.getElementById('sectionsContainer').insertAdjacentHTML('beforeend', html);
+    validateSectionWeights();
+}
+
+
+
+
+function addCriteria(sectionNum) {
+    const container = document.getElementById(`criteriaContainer_${sectionNum}`);
+    const countInput = document.getElementById(`criteria_count_${sectionNum}`);
+    let index = parseInt(countInput.value) + 1;
+    countInput.value = index;
+
+    const html = `
+    <div class="border p-3 rounded mb-3 bg-light">
+        <h6>Criteria ${index}</h6>
+        <div class="row g-2">
+            <div class="col-md-4">
+                <input type="text" name="criteria_title_${sectionNum}_${index}" class="form-control"
+                       placeholder="Title (e.g. Problem Solving)" required>
+            </div>
+            <div class="col-md-4">
+                <input type="text" name="criteria_desc_${sectionNum}_${index}" class="form-control"
+                       placeholder="Description" required>
+            </div>
+            <div class="col-md-3">
+                <input type="number" name="criteria_weight_${sectionNum}_${index}"
+                       id="criteria_weight_${sectionNum}_${index}"
+                       class="form-control criteria-weight-input"
+                       placeholder="Weight (%)" required
+                       oninput="validateCriteriaWeights(${sectionNum})">
+            </div>
+            
+        </div>
+        <div class="text-danger small mt-1" id="criteria_weight_error_${sectionNum}"></div>
+    </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', html);
+    validateCriteriaWeights(sectionNum);
+}
+
+function validateSectionWeights() {
+    let total = 0;
+    document.querySelectorAll('.section-weight-input').forEach(input => {
+        total += parseInt(input.value) || 0;
+    });
+
+    const addBtn = document.getElementById("addSectionBtn");
+    if (total >= 100) {
+        addBtn.disabled = true;
+        addBtn.classList.add("disabled");
+    } else {
+        addBtn.disabled = false;
+        addBtn.classList.remove("disabled");
+    }
+    return total;
+}
+
+function validateCriteriaWeights(sectionNum) {
+    let total = 0;
+    const inputs = document.querySelectorAll(`#criteriaContainer_${sectionNum} .criteria-weight-input`);
+    inputs.forEach(input => {
+        total += parseInt(input.value) || 0;
+    });
+
+    const errorDiv = document.getElementById(`criteria_weight_error_${sectionNum}`);
+    const addBtn = document.querySelector(`#section_block_${sectionNum} .btn-outline-secondary`);
+
+    if (total >= 100) {
+        errorDiv.textContent = `Criteria weights total ${total}%. Max is 100%.`;
+        if (addBtn) addBtn.disabled = true;
+    } else {
+        errorDiv.textContent = '';
+        if (addBtn) addBtn.disabled = false;
+    }
+
+    return total;
+}
+
+document.getElementById("roleForm").addEventListener("submit", function (e) {
+    let total = validateSectionWeights();
+    if (total > 100) {
+        e.preventDefault();
+        alert("❌ Submission failed: Section weights must not exceed 100%.");
+    }
+});
+</script>
+{% endblock %}

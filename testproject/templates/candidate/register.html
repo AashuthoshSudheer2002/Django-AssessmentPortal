@@ -1,0 +1,70 @@
+{% extends 'home.html' %}
+{% block content %}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+    .form-container {
+        max-width: 600px;
+        margin: 60px auto;
+    }
+
+    .form-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+        background-color: #ffffff;
+    }
+
+    .form-title {
+        font-weight: 600;
+        font-size: 1.75rem;
+        text-align: center;
+        letter-spacing: 1px;
+        margin-bottom: 2rem;
+    }
+
+    .form-floating > label {
+        color: #6c757d;
+    }
+
+    .btn-modern {
+        background-color: #0d6efd;
+        color: white;
+        font-weight: 500;
+        padding: 0.75rem 1.25rem;
+        border-radius: 8px;
+    }
+
+    .btn-modern:hover {
+        background-color: #0846c3;
+    }
+
+</style>
+
+<div class="form-container">
+    <div class="form-card">
+        <h1 class="form-title">Candidate Registration</h1>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% for field in form %}
+                <div class="form-floating mb-3">
+                    {{ field }}
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {% for error in field.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            <div class="d-grid">
+                <button type="submit" class="btn btn-modern">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

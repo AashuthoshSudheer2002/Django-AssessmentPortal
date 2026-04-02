@@ -1,0 +1,99 @@
+{% extends 'home.html' %}
+{% load form_filters %}
+{% block content %}
+<br><br><br>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<div class="container mt-5 text-center" style="letter-spacing: 2px;">
+    <h1 class="mb-4">CRITERIA WISE SCORE</h1>
+
+    <form method="post" class="w-50 mx-auto">
+        {% csrf_token %}
+        
+        <div class="mb-3">
+            <label for="id_candidate" class="form-label">Candidate</label>
+            {{ form.candidate|add_class:"form-select" }}
+        </div>
+
+        <div class="mb-3">
+            <label for="id_criterion" class="form-label">Criterion</label>
+            <select name="criterion" id="id_criterion" class="form-select">
+                <option value="">Select a criterion</option>
+                {% for criterion in form.fields.criterion.queryset %}
+                    <option value="{{ criterion.id }}" {% if form.criterion.value|stringformat:"s" == criterion.id|stringformat:"s" %}selected{% endif %}>
+                        {{ criterion }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="id_score" class="form-label">Score</label>
+            {{ form.score|add_class:"form-control" }}
+        </div>
+
+        <div class="mb-3">
+            <label for="id_evaluator" class="form-label">Evaluator</label>
+            <select name="evaluator" id="id_evaluator" class="form-select">
+                <option value="">Select an evaluator</option>
+                {% for ev in form.fields.evaluator.queryset %}
+                    <option value="{{ ev.id }}" {% if form.evaluator.value|stringformat:"s" == ev.id|stringformat:"s" %}selected{% endif %}>{{ ev.user.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <input type="submit" value="Submit" class="btn btn-primary">
+    </form>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    $('#id_candidate').change(function () {
+        const candidateId = $(this).val();
+
+        // Load Criteria
+        
+        // Load Evaluators
+        const evaluatorSelect = $('#id_evaluator');
+        evaluatorSelect.empty();
+        evaluatorSelect.append('<option value="">Loading evaluators...</option>');
+
+        if (candidateId) {
+            // Fetch criteria
+            // Fetch evaluators
+            $.ajax({
+                url: "{% url 'ajax_get_evaluators' %}",
+                data: {
+                    'candidate_id': candidateId
+                },
+                dataType: 'json',
+                success: function (data) {
+                    evaluatorSelect.empty();
+                    if (data.evaluators.length === 0) {
+                        evaluatorSelect.append('<option value="">No evaluators found</option>');
+                    } else {
+                        evaluatorSelect.append('<option value="">Select an evaluator</option>');
+                        data.evaluators.forEach(function (ev) {
+                            evaluatorSelect.append(
+                                '<option value="' + ev.id + '">' + ev.name + '</option>'
+                            );
+                        });
+                    }
+                },
+                error: function() {
+                    evaluatorSelect.empty();
+                    evaluatorSelect.append('<option value="">Error loading evaluators</option>');
+                }
+            });
+        } else {
+            criteriaSelect.empty();
+            criteriaSelect.append('<option value="">Select a candidate first</option>');
+            evaluatorSelect.empty();
+            evaluatorSelect.append('<option value="">Select a candidate first</option>');
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'home.html' %}
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<div class="container mt-5">
+    <h1 class="mb-4 text-center">Evaluator's Candidates</h1>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-primary">
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Role</th>
+                    <th scope="col">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for candidate in candidates %}
+                    <tr>
+                        <td>{{ candidate.name }}</td>
+                        <td>{{ candidate.role }}</td>
+                        <td>
+                            {% if candidate.is_fully_evaluated %}
+                                <span class="text-success fw-bold">Evaluated</span>
+                            {% else %}
+                                <a href="{% url 'evalscorer' candidate_id=candidate.id %}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    Evaluate
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
